@@ -9,17 +9,17 @@ import {
   signOut,
   onAuthStateChanged,
 } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, collection, writeBatch, query, getDocs } from 'firebase/firestore';
 
 const firebaseConfig = {
-    apiKey: "AIzaSyAtH_3n2Hz3LMmz36uDDv85MVNYpH4e3sA",
-    authDomain: "crwn-clothing-db-2023.firebaseapp.com",
-    projectId: "crwn-clothing-db-2023",
-    storageBucket: "crwn-clothing-db-2023.appspot.com",
-    messagingSenderId: "994512148317",
-    appId: "1:994512148317:web:e775988d5aeb191a787ab4"
-  };
-  
+  apiKey: "AIzaSyAtH_3n2Hz3LMmz36uDDv85MVNYpH4e3sA",
+  authDomain: "crwn-clothing-db-2023.firebaseapp.com",
+  projectId: "crwn-clothing-db-2023",
+  storageBucket: "crwn-clothing-db-2023.appspot.com",
+  messagingSenderId: "994512148317",
+  appId: "1:994512148317:web:e775988d5aeb191a787ab4"
+};
+
 const firebaseApp = initializeApp(firebaseConfig);
 
 const googleProvider = new GoogleAuthProvider();
@@ -35,6 +35,33 @@ export const signInWithGoogleRedirect = () =>
   signInWithRedirect(auth, googleProvider);
 
 export const db = getFirestore();
+
+export const addCollectionAndDocuments = async (collectionKey, objectsToAdd) => {
+  const collectionRef = collection(db, collectionKey);
+  const batch = writeBatch(db);
+
+  objectsToAdd.forEach((object) => {
+    const docRef = doc(collectionRef, object.title.toLowerCase());
+    batch.set(docRef, object);
+  });
+
+  await batch.commit();
+  console.log('doneeeeee')
+}
+
+export const getCategoriesAndDocuments = async () => {
+  const collectionRef = collection(db, 'categories');
+  const q = query(collectionRef);
+
+  const querySnapshot = await getDocs(q);
+  const categoryMap = querySnapshot.docs.reduce((acc, docSnapshot) => {
+    const { title, items } = docSnapshot.data();
+    acc[title.toLowerCase()] = items;
+    return acc;
+  }, {})
+
+  return categoryMap;
+}
 
 export const createUserDocumentFromAuth = async (
   userAuth,
@@ -81,4 +108,3 @@ export const signOutUser = async () => await signOut(auth);
 
 export const onAuthStateChangedListener = (callback) =>
   onAuthStateChanged(auth, callback);
-  
